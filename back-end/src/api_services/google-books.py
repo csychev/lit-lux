@@ -3,12 +3,16 @@ import flask
 from flask import Flask, request
 from urllib.request import urlopen
 import json
+from flask_cors import CORS, cross_origin
+import urllib.parse
 
 app = Flask(__name__)
-app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['CORS_HEADERS'] = "Content-Type"
+cors = CORS(app)
 
 
-@app.route("/books/search", methods=['GET', 'POST'])
+@app.route("/books/search", methods=['GET'])
+@cross_origin()
 def search_info():
     query = request.args.get('q')
     book_dict = {
@@ -16,13 +20,16 @@ def search_info():
         "author": "",
         "page_count": "",
         "publication_date": "",
-        "category": ""
-
+        "category": "",
+        "summary": ""
     }
     api = 'https://www.googleapis.com/books/v1/volumes?q='
 
-    safe_query = urllib.parse.quote_plus(query)
-    resp = urlopen(api + safe_query)
+    # safe_query = urllib.parse.quote_plus(query)
+    print("LOOK HERE >>> ", api+query)
+    encoded_query = urllib.parse.quote(query)
+    resp = urlopen(api+encoded_query)
+    print(resp)
 
     book_data = json.load(resp)
 
@@ -35,8 +42,9 @@ def search_info():
     book_dict["page_count"] = volume_info["pageCount"]
     book_dict["publication_date"] = volume_info["publishedDate"]
     book_dict["category"] = volume_info["categories"]
-
-    return book_dict
+    book_dict["summary"] = volume_info["description"]
+    # print(book_dict["summary"])
+    return book_dict, 200
 
 
 def main():
